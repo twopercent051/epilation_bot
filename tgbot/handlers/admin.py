@@ -13,8 +13,8 @@ from tgbot.models.redis_connector import RedisConnector as rds
 from tgbot.models.sql_connector import TextsDAO, ServicesDAO
 
 router = Router()
-router.message.filter(AdminFilter())
-router.callback_query.filter(AdminFilter())
+# router.message.filter(AdminFilter())
+# router.callback_query.filter(AdminFilter())
 
 
 @router.message(Command("start"))
