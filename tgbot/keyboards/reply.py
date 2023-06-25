@@ -21,13 +21,39 @@ class UserReplyKeyboard:
     """Клавиатура юзера для передачи телефона"""
 
     @classmethod
-    def phone_keyboard(cls):
+    def start_kb(cls, is_office):
+        if is_office:
+            kb = [[KeyboardButton(text="Старт")]]
+        else:
+            kb = [[KeyboardButton(text="Старт", request_contact=True)]]
+        return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, one_time_keyboard=True)
+
+    @classmethod
+    def new_menu_kb(cls):
         kb = [
             [
-                KeyboardButton(text='Поделиться телефоном автоматически', request_contact=True),
-                KeyboardButton(text='Ввести телефон вручную')
+                KeyboardButton(text="Записаться с бонусом 🎁"),
+                KeyboardButton(text="Адрес"),
             ],
-            [KeyboardButton(text='В начало')],
+            [
+                KeyboardButton(text="Обо мне и отзывы"),
+                KeyboardButton(text="Прайс"),
+            ],
+            [KeyboardButton(text="Коротко о видах эпиляции")],
+            [KeyboardButton(text="Написать Оксане в личку")],
         ]
-        keyboard = ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, one_time_keyboard=True)
+        keyboard = ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, one_time_keyboard=False)
+        return keyboard
+
+    @classmethod
+    def current_menu_kb(cls):
+        kb = [
+            [KeyboardButton(text="Записаться / Информация о ближайшей записи")],
+            [
+                KeyboardButton(text="Написать отзыв"),
+                KeyboardButton(text="Прайс"),
+            ],
+            [KeyboardButton(text="Написать Оксане в личку")],
+        ]
+        keyboard = ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, one_time_keyboard=False)
         return keyboard

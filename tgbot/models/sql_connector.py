@@ -47,6 +47,7 @@ class ServicesDB(Base):
     price = Column(Integer, nullable=False)
     duration = Column(Integer, nullable=False)  # Время выполнения услуги в минутах
     status = Column(String, nullable=False, server_default="enabled")
+    ordering = Column(Integer, nullable=False, server_default="1")
 
 
 class ClientsDB(Base):
@@ -79,13 +80,14 @@ class RegistrationsDB(Base):
     __tablename__ = "registrations"
 
     id = Column(Integer, nullable=False, autoincrement=True, primary_key=True)
+    phone = Column(String, nullable=False)
     reg_date = Column(DATE, nullable=False)
     reg_time_start = Column(TIME, nullable=False)
     reg_time_finish = Column(TIME, nullable=False)
     services = Column(JSON, nullable=True)
     total_price = Column(Integer, nullable=True)
     is_blocked = Column(BOOLEAN, nullable=False)
-    status = Column(String, nullable=False)
+    status = Column(String, nullable=False)  # created cancelled finished
 
 
 class BaseDAO:
@@ -95,7 +97,7 @@ class BaseDAO:
     @classmethod
     async def get_one_or_none(cls, **filter_by):
         async with async_session_maker() as session:
-            query = select(cls.model.__table__.columns).filter_by(**filter_by)
+            query = select(cls.model.__table__.columns).filter_by(**filter_by).limit(1)
             result = await session.execute(query)
             return result.mappings().one_or_none()
 
@@ -136,6 +138,21 @@ class TextsDAO(BaseDAO):
 class ServicesDAO(BaseDAO):
     model = ServicesDB
 
+    @classmethod
+    async def get_order_list(cls, **filter_by) -> list:
+        async with async_session_maker() as session:
+            query = select(cls.model.__table__.columns).filter_by(**filter_by).order_by(ServicesDB.ordering.asc(),
+                                                                                        ServicesDB.id.asc())
+            result = await session.execute(query)
+            return result.mappings().all()
+
+    @classmethod
+    async def update(cls, service_id: int, data):
+        async with async_session_maker() as session:
+            stmt = update(cls.model).values(data).filter_by(id=service_id)
+            await session.execute(stmt)
+            await session.commit()
+
 
 class ClientsDAO(BaseDAO):
     model = ClientsDB
@@ -147,3 +164,14 @@ class MailingsDAO(BaseDAO):
 
 class RegistrationsDAO(BaseDAO):
     model = RegistrationsDB
+
+    @classmethod
+    async def get_by_user_id(cls, user_id: str) -> dict:
+        async with async_session_maker() as session:
+            query_clients = select(ClientsDB.__table__.columns).filter_by(user_id=user_id).limit(1)
+            result = await session.execute(query_clients)
+            user = result.mappings().one_or_none()
+            phone = user["phone"]
+            query_registrations = select(cls.model.__table__.columns).filter_by(phone=phone)
+            result = await session.execute(query_registrations)
+            return result.mappings().all()
