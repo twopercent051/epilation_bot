@@ -1,5 +1,7 @@
+import os
+
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile, InputFile
 
 from create_bot import bot
 from tgbot.misc.states import UserFSM
@@ -10,12 +12,13 @@ router = Router()
 
 
 async def price_render(user_id: int | str, gender: str):
+    no_photo = FSInputFile(path=f'{os.getcwd()}/tgbot/static/no_photo.jpg')
     laser_photo = await TextsDAO.get_one_or_none(chapter=f"laser_{gender}|price_list")
     bio_photo = await TextsDAO.get_one_or_none(chapter=f"bio_{gender}|price_list")
     bio_abonements = await TextsDAO.get_one_or_none(chapter="bio_abonements|price_list")
-    laser_photo = laser_photo["text"] if laser_photo is not None else "AgACAgIAAxkBAAIc62SRHzWI3vScUToj2Ef5pa_pn32KAAIqyzEb_kKISO-bIsonmGRFAQADAgADeQADLwQ"
-    bio_photo = bio_photo["text"] if bio_photo is not None else "AgACAgIAAxkBAAIc62SRHzWI3vScUToj2Ef5pa_pn32KAAIqyzEb_kKISO-bIsonmGRFAQADAgADeQADLwQ"
-    bio_abonements = bio_abonements["text"] if bio_abonements is not None else "AgACAgIAAxkBAAIc62SRHzWI3vScUToj2Ef5pa_pn32KAAIqyzEb_kKISO-bIsonmGRFAQADAgADeQADLwQ"
+    laser_photo = laser_photo["text"] if laser_photo is not None else no_photo
+    bio_photo = bio_photo["text"] if bio_photo is not None else no_photo
+    bio_abonements = bio_abonements["text"] if bio_abonements is not None else no_photo
     kb = inline_kb.price_gender_kb(gender=gender)
     await bot.send_photo(chat_id=user_id, photo=laser_photo)
     await bot.send_photo(chat_id=user_id, photo=bio_photo)
@@ -25,8 +28,11 @@ async def price_render(user_id: int | str, gender: str):
 @router.message(F.text == "Прайс", UserFSM.main_menu)
 async def price_list(message: Message):
     finished_registrations = await RegistrationsDAO.get_by_user_id(user_id=str(message.from_user.id))
+    no_photo = FSInputFile(path=f'{os.getcwd()}/tgbot/static/no_photo.jpg')
     if len(finished_registrations) == 0:
-        pass
+        new_clients_photo = await TextsDAO.get_one_or_none(chapter="new_clients|price_list")
+        new_clients_photo = new_clients_photo["text"] if new_clients_photo is not None else no_photo
+        await message.answer_photo(photo=new_clients_photo)
     await price_render(user_id=message.from_user.id, gender="girls")
 
 

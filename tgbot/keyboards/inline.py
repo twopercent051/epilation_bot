@@ -117,8 +117,8 @@ class AdminInlineKeyboard:
     def edit_about_me_kb(cls):
         keyboard = [
             [InlineKeyboardButton(text="Приветственное видео", callback_data="edit_about_me:video")],
-            [InlineKeyboardButton(text="Фото мастера", callback_data="edit_about_me:video")],
-            [InlineKeyboardButton(text='Текст "Обо мне"', callback_data="edit_about_me:video")],
+            [InlineKeyboardButton(text="Фото мастера", callback_data="edit_about_me:photo")],
+            [InlineKeyboardButton(text='Текст "Обо мне"', callback_data="edit_about_me:text")],
             [InlineKeyboardButton(text="⬅️ Назад", callback_data="edit_info_blocks")],
         ]
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -126,6 +126,7 @@ class AdminInlineKeyboard:
     @classmethod
     def edit_price_list_kb(cls):
         keyboard = [
+            [InlineKeyboardButton(text="Картинка для новых клиентов", callback_data="edit_price:new_clients")],
             [InlineKeyboardButton(text="Картинка-прайс - Био - Мужчины", callback_data="edit_price:bio_boys")],
             [InlineKeyboardButton(text="Картинка-прайс - Био - Девушки", callback_data="edit_price:bio_girls")],
             [InlineKeyboardButton(text="Картинка-прайс - Лазер - Мужчины", callback_data="edit_price:laser_boys")],
@@ -174,4 +175,37 @@ class UserInlineKeyboard:
             keyboard = [[InlineKeyboardButton(text="Посмотреть прайс для мужчин 👨",
                                               callback_data="price_gender:boys")]]
         keyboard.append([InlineKeyboardButton(text="Посмотреть сравнение видов эпиляции", callback_data="epil_diff")])
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def about_epilation_kb(cls):
+        keyboard = [
+            [InlineKeyboardButton(text="Подробнее о лазерной эпиляции", callback_data="about_laser")],
+            [InlineKeyboardButton(text="Подробнее о биоэпиляции (шугаринг/воск)", callback_data="about_bio")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def about_me_kb(cls):
+        keyboard = [
+            [InlineKeyboardButton(text="Посмотреть приветственное видео", callback_data="about_me_video")],
+            [InlineKeyboardButton(text="Читать отзывы", callback_data="read_feedbacks")],
+            [InlineKeyboardButton(text="Написать Оксане в личку", url="https://t.me/neprostowaxing")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def feedbacks_categories_kb(cls):
+        keyboard = [
+            [InlineKeyboardButton(text="Отзывы о лазерной эпиляции", callback_data="feedbacks_laser")],
+            [InlineKeyboardButton(text="Отзывы о биоэпиляции (воск/шугаринг)", callback_data="feedbacks_bio")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def feedbacks_gender_kb(cls):
+        keyboard = [
+            [InlineKeyboardButton(text="Отзывы от мужчин", callback_data="feedbacks_boys")],
+            [InlineKeyboardButton(text="Отзывы от девушек", callback_data="feedbacks_girls")],
+        ]
         return InlineKeyboardMarkup(inline_keyboard=keyboard)

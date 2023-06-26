@@ -399,7 +399,7 @@ async def address_text(message: Message, state: FSMContext):
 ##################
 #  Редактура обо мне
 
-@router.callback_query(F.data.split(":")[0] == "about_me")
+@router.callback_query(F.data.split(":")[0] == "edit_about_me")
 async def edit_about_me(callback: CallbackQuery, state: FSMContext):
     edit_subject = callback.data.split(":")[1]
     chapter = f"{edit_subject}|about_me"
@@ -426,7 +426,7 @@ async def edit_about_me(callback: CallbackQuery, state: FSMContext):
         text = "Текущий текст ☝️\nОтправьте ответным сообщением новый текст, на который его следует заменить:"
         await state.set_state(AdminFSM.about_me_text)
     await state.update_data(current_subject=current_subject)
-    kb = inline_kb.edit_info_block_back_kb(chapter="address")
+    kb = inline_kb.edit_info_block_back_kb(chapter="about_me")
     await callback.message.answer(text, reply_markup=kb)
     await bot.answer_callback_query(callback.id)
 

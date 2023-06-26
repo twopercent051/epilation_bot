@@ -81,6 +81,7 @@ class RegistrationsDB(Base):
 
     id = Column(Integer, nullable=False, autoincrement=True, primary_key=True)
     phone = Column(String, nullable=False)
+    user_id = Column(String, nullable=False)
     reg_date = Column(DATE, nullable=False)
     reg_time_start = Column(TIME, nullable=False)
     reg_time_finish = Column(TIME, nullable=False)
@@ -171,6 +172,8 @@ class RegistrationsDAO(BaseDAO):
             query_clients = select(ClientsDB.__table__.columns).filter_by(user_id=user_id).limit(1)
             result = await session.execute(query_clients)
             user = result.mappings().one_or_none()
+            if not user:
+                return list()
             phone = user["phone"]
             query_registrations = select(cls.model.__table__.columns).filter_by(phone=phone)
             result = await session.execute(query_registrations)

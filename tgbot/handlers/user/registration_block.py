@@ -32,10 +32,11 @@ class UserMainMenu:
         await bot.send_message(chat_id=user_id, text=text, reply_markup=kb)
 
     @classmethod
-    async def menu_type(cls, user_id: str | int, name: str, phone: str, state: FSMContext):
-        user = await ClientsDAO.get_one_or_none(phone=phone)
+    async def menu_type(cls, user_id: str, name: str, phone: str, state: FSMContext):
+        user = await ClientsDAO.get_one_or_none(user_id=user_id)
         if user:
-            finished_registrations = await RegistrationsDAO.get_many(phone=phone, status="finished")
+            # finished_registrations = await RegistrationsDAO.get_many(phone=phone, status="finished")
+            finished_registrations = await RegistrationsDAO.get_many(user_id=user_id, status="finished")
             if len(finished_registrations) > 0:
                 await cls.current_clients_menu(user_id=user_id, name=name)
             else:
@@ -49,8 +50,12 @@ class UserMainMenu:
 async def user_start(message: Message, command: CommandObject, state: FSMContext):
     user = await ClientsDAO.get_one_or_none(user_id=str(message.from_user.id))
     if user:
-        await UserMainMenu.menu_type(user_id=message.from_user.id, name=user["full_name"], phone=user["phone"],
-                                     state=state)
+        await UserMainMenu.menu_type(
+            user_id=str(message.from_user.id),
+            name=user["full_name"],
+            phone=user["phone"],
+            state=state
+        )
         return
     arg = command.args
     if arg == "office":
@@ -74,7 +79,15 @@ async def phone_record(message: Message, state: FSMContext):
     phone = message.contact.phone_number
     user = await ClientsDAO.get_one_or_none(phone=phone)
     name = user["full_name"] if user else ""
-    await UserMainMenu.menu_type(user_id=message.contact.user_id, name=name, phone=phone, state=state)
+    username = f"@{message.from_user.username}" if message.from_user.username else ""
+    await ClientsDAO.create(
+        user_id=str(message.from_user.id),
+        username=username,
+        phone=phone,
+        full_name=name,
+        gender="unknown"
+    )
+    await UserMainMenu.menu_type(user_id=str(message.contact.user_id), name=name, phone=phone, state=state)
 
 
 ###############
@@ -158,8 +171,8 @@ async def get_user_birthday(message: Message, state: FSMContext):
             gender=state_data["gender"],
             birthday=birthday
         )
-        await UserMainMenu.menu_type(user_id=message.from_user.id, name=state_data["full_name"],
-                                     phone=state_data["phone"])
+        await UserMainMenu.menu_type(user_id=str(message.from_user.id), name=state_data["full_name"],
+                                     phone=state_data["phone"], state=state)
     except ValueError:
         text = "К сожалению, не удалось введённое сообщение определить как дату рождения. Пожалуйста, напишите дату " \
                "рождения в формате: 07.02.1990"
@@ -170,7 +183,7 @@ async def get_user_birthday(message: Message, state: FSMContext):
 
 @router.callback_query(F.data == "main_menu")
 async def main_menu_clb(callback: CallbackQuery, state: FSMContext):
-    username = f"@{callback.message.from_user.username}" if callback.message.from_user.username else ""
+    username = f"@{callback.from_user.username}" if callback.from_user.username else ""
     state_data = await state.get_data()
     await ClientsDAO.create(
         user_id=str(callback.from_user.id),
@@ -179,8 +192,13 @@ async def main_menu_clb(callback: CallbackQuery, state: FSMContext):
         phone=state_data["phone"],
         gender=state_data["gender"],
     )
-    await UserMainMenu.menu_type(user_id=callback.from_user.id, name=state_data["full_name"],
-                                 phone=state_data["phone"], state=state)
+    await UserMainMenu.menu_type(
+        user_id=str(callback.from_user.id),
+        name=state_data["full_name"],
+        phone=state_data["phone"],
+        state=state
+    )
+    await bot.answer_callback_query(callback.id)
 
 
 
