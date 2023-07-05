@@ -74,7 +74,15 @@ async def choice_gender(callback: CallbackQuery):
         if epil_type == "laser":
             if step == 1:
                 await laser_girls_1(user_id=callback.from_user.id)
-
+            if step == 2:
+                await laser_girls_2(user_id=callback.from_user.id)
+            if step == 3:
+                await laser_girls_3(user_id=callback.from_user.id)
+        if epil_type == "bio":
+            if step == 1:
+                await bio_girls_1(user_id=callback.from_user.id)
+            if step == 2:
+                await bio_girls_2(user_id=callback.from_user.id)
 
 
 # Лазер мужчины
