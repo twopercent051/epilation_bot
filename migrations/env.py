@@ -10,7 +10,7 @@ from alembic import context
 sys.path.insert(0, dirname(dirname(dirname(abspath(__file__)))))
 
 from create_bot import DATABASE_URL
-from tgbot.models.sql_connector import Base, TextsDB, ServicesDB, ClientsDB, MailingsDB, RegistrationsDB
+from tgbot.models.sql_connector import Base, TextsDB, ServicesDB, ClientsDB, MailingsDB, RegistrationsDB, StaticsDB
 
 
 # this is the Alembic Config object, which provides

@@ -146,11 +146,21 @@ class UserInlineKeyboard:
     """Клавиатура пользователя"""
 
     @classmethod
-    def phone_in_base_kb(cls, phone):
+    def phone_in_base_kb(cls, phone: str):
         keyboard = [
             [InlineKeyboardButton(text="Отправить Оксане уведомление", callback_data=f"msg_to_admin|{phone}")],
             [InlineKeyboardButton(text="Хочу ввести другой телефон", callback_data="correct_phone")],
         ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def answer_to_user_kb(cls, user_id: str | int):
+        keyboard = [[InlineKeyboardButton(text="↩️ Ответить", callback_data=f"answer:{user_id}")]]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def msg_to_admin_kb(cls):
+        keyboard = [[InlineKeyboardButton(text="Написать Оксане в ЛС", url="https://t.me/neprostowaxing")]]
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
     @classmethod
@@ -180,8 +190,8 @@ class UserInlineKeyboard:
     @classmethod
     def about_epilation_kb(cls):
         keyboard = [
-            [InlineKeyboardButton(text="Подробнее о лазерной эпиляции", callback_data="about_laser")],
-            [InlineKeyboardButton(text="Подробнее о биоэпиляции (шугаринг/воск)", callback_data="about_bio")],
+            [InlineKeyboardButton(text="Подробнее о лазерной эпиляции", callback_data="about_epil:laser")],
+            [InlineKeyboardButton(text="Подробнее о биоэпиляции (шугаринг/воск)", callback_data="about_epil:bio")],
         ]
         return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
@@ -205,7 +215,130 @@ class UserInlineKeyboard:
     @classmethod
     def feedbacks_gender_kb(cls):
         keyboard = [
-            [InlineKeyboardButton(text="Отзывы от мужчин", callback_data="feedbacks_boys")],
+            [InlineKeyboardButton(text="Отзывы от мужчин", callback_data="feedbacks_boys|page:start")],
             [InlineKeyboardButton(text="Отзывы от девушек", callback_data="feedbacks_girls")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def feedbacks_boys_kb(cls, page: str | int):
+        keyboard = [
+            [InlineKeyboardButton(text="Читать ещё", callback_data=f"feedbacks_boys|page:{page}")],
+            [InlineKeyboardButton(text="Отзывы от девушек 👩‍🦰", callback_data="feedbacks_girls")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+class UserAboutEpilationInline:
+
+    @classmethod
+    def laser_boys_1_kb(cls):
+        keyboard = [
+            [
+                InlineKeyboardButton(text="Для девушки 👩‍🦰", callback_data="about_epil:laser:girls:1"),
+                InlineKeyboardButton(text="Далее ➡️", callback_data="about_epil:laser:boys:2"),
+
+            ]
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def laser_boys_2_kb(cls):
+        keyboard = [
+            [InlineKeyboardButton(text="Часто задаваемые вопросы от мужчин ❔", callback_data="about_epil:laser:boys:3")],
+            [InlineKeyboardButton(text="Отзывы от мужчин", callback_data="feedbacks_boys|page:start")],
+            [InlineKeyboardButton(text="Хочу записаться на процедуру", callback_data="sign_up")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def laser_boys_3_kb(cls):
+        keyboard = [
+            [InlineKeyboardButton(text="Хочу записаться на процедуру 📝", callback_data="sign_up")],
+            [InlineKeyboardButton(text="Ок. С лазерной понятно, хочу почитать про биоэпиляцию",
+                                  callback_data="about_epil:bio")],
+            [InlineKeyboardButton(text="Написать Оксане в личку", url="https://t.me/neprostowaxing")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def bio_boys_1_kb(cls):
+        keyboard = [
+            [InlineKeyboardButton(text="Часто задаваемые вопросы от мужчин ❔", callback_data="about_epil:bio:boys:2")],
+            [InlineKeyboardButton(text="Читать про биоэпиляцию для девушки", callback_data="about_epil:bio:girls:1")],
+            [
+                InlineKeyboardButton(text="Отзывы", callback_data="feedbacks_boys|page:start"),
+                InlineKeyboardButton(text="Записаться 📝", callback_data="sign_up"),
+            ],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def bio_boys_2_kb(cls):
+        keyboard = [
+            [
+                InlineKeyboardButton(text="Отзывы", callback_data="feedbacks_boys|page:start"),
+                InlineKeyboardButton(text="Записаться 📝", callback_data="sign_up"),
+            ],
+            [InlineKeyboardButton(text="Ок. С биоэпиляцией понятно, хочу почитать про лазерную",
+                                  callback_data="about_epil:laser:boys:1")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def laser_girls_1_kb(cls):
+        keyboard = [
+            [
+                InlineKeyboardButton(text="Для мужчины 🧑", callback_data="about_epil:laser:boys:1"),
+                InlineKeyboardButton(text="Далее ➡️", callback_data="about_epil:laser:girls:2"),
+            ]
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def laser_girls_2_kb(cls):
+        keyboard = [
+            [
+                # todo Исправить коллбек дату
+                InlineKeyboardButton(text="Отзывы", callback_data="feedbacks_girls|page:start"),
+                InlineKeyboardButton(text="Записаться 📝", callback_data="sign_up"),
+            ],
+            [InlineKeyboardButton(text="Часто задаваемые вопросы ❔", callback_data="about_epil:laser:girls:3")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def laser_girls_3_kb(cls):
+        keyboard = [
+            [InlineKeyboardButton(text="Хочу записаться на процедуру 📝", callback_data="sign_up")],
+            [InlineKeyboardButton(text="Ок. С лазерной понятно, хочу почитать про биоэпиляцию",
+                                  callback_data="about_epil:bio")],
+            [InlineKeyboardButton(text="Написать Оксане в личку", url="https://t.me/neprostowaxing")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def bio_girls_1_kb(cls):
+        keyboard = [
+            [InlineKeyboardButton(text="Часто задаваемые вопросы от девушек ❔", callback_data="about_epil:bio:girls:2")],
+            [InlineKeyboardButton(text="Читать про биоэпиляцию для мужчин", callback_data="about_epil:bio:boys:1")],
+            [
+                # todo Исправить коллбек дату
+                InlineKeyboardButton(text="Отзывы", callback_data="feedbacks_boys|page:start"),
+                InlineKeyboardButton(text="Записаться 📝", callback_data="sign_up"),
+            ],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def bio_girls_2_kb(cls):
+        keyboard = [
+            [
+                # todo Исправить коллбек дату
+                InlineKeyboardButton(text="Отзывы", callback_data="feedbacks_boys|page:start"),
+                InlineKeyboardButton(text="Записаться 📝", callback_data="sign_up"),
+            ],
+            [InlineKeyboardButton(text="Ок. С биоэпиляцией понятно, хочу почитать про лазерную",
+                                  callback_data="about_epil:laser:girls:1")],
         ]
         return InlineKeyboardMarkup(inline_keyboard=keyboard)

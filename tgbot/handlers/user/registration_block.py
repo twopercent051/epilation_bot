@@ -5,13 +5,15 @@ from aiogram.filters import Command, CommandObject
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 
-from create_bot import bot
+from create_bot import bot, config
 from tgbot.keyboards.inline import UserInlineKeyboard as inline_kb
 from tgbot.keyboards.reply import UserReplyKeyboard as reply_kb
 from tgbot.misc.states import UserFSM
 from tgbot.models.sql_connector import ClientsDAO, RegistrationsDAO
 
 router = Router()
+
+admin_id = config.tg_bot.admin_ids[0]
 
 
 class UserMainMenu:
@@ -126,8 +128,15 @@ async def phone_record(message: Message, state: FSMContext):
 async def msg_to_admin(callback: CallbackQuery):
     phone = callback.data.split(":")[1]
     user = await ClientsDAO.get_one_or_none(phone=phone)
-
-    admin_text = f"Пользователь @234567 указал номер телефона +79500040033, но он уже есть в базе у клиента @45346346. Нужно связаться с ним и убедиться, что это он и подтвердить телефон."
+    cur_username = f"@{callback.from_user.username}" if callback.from_user.username else ""
+    admin_text = f"Пользователь {cur_username} указал номер телефона {phone}, но он уже есть в базе у " \
+                 f"клиента {user['username']}. Нужно связаться с ним и убедиться, что это он и подтвердить телефон."
+    admin_kb = inline_kb.answer_to_user_kb(user_id=callback.from_user.id)
+    user_text = "Уведомление отправлено. Оксана с вами свяжется."
+    user_kb = inline_kb.msg_to_admin_kb()
+    await bot.send_message(chat_id=admin_id, text=admin_text, reply_markup=admin_kb)
+    await callback.message.answer(user_text, reply_markup=user_kb)
+    await bot.answer_callback_query(callback.id)
 
 
 @router.callback_query(F.data == "correct_phone")

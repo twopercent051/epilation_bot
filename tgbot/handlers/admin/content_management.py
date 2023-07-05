@@ -1,5 +1,9 @@
+import glob
+import os
+from typing import Literal
+
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.filters import Command
 from aiogram import F, Router
 
@@ -9,11 +13,49 @@ from tgbot.keyboards.inline import AdminInlineKeyboard as inline_kb
 from tgbot.keyboards.reply import AdminReplyKeyboard as reply_kb
 from tgbot.misc.states import AdminFSM
 from tgbot.models.redis_connector import RedisConnector as rds
-from tgbot.models.sql_connector import TextsDAO, ServicesDAO
+from tgbot.models.sql_connector import TextsDAO, ServicesDAO, StaticsDAO
 
 router = Router()
 router.message.filter(AdminFilter())
 router.callback_query.filter(AdminFilter())
+
+
+async def refresh_static_file(
+        category: str,
+        file_type: Literal["photo", "video"],
+        file_name: str,
+        chat_id: str | int
+):
+    file = FSInputFile(path=file_name)
+    if file_type == "photo":
+        msg = await bot.send_photo(chat_id=chat_id, photo=file)
+        file_id = msg.photo[-1].file_id
+    elif file_type == "video":
+        msg = await bot.send_video(chat_id=chat_id, video=file)
+        file_id = msg.video.file_id
+    else:
+        msg, file_id = None, None
+    file_name = file_name.split("/")[-1].split(".")[0]
+    await bot.delete_message(chat_id=chat_id, message_id=msg.message_id)
+    await StaticsDAO.create(category=category, title=file_name, file_id=file_id)
+
+
+@router.message(Command("refresh_static"))
+async def refresh_static(message: Message):
+    await message.delete()
+    await StaticsDAO.delete_all()
+    static_path = f"{os.getcwd()}/tgbot/static"
+    for directory in ["", "feedback_boys", "laser_boys", "laser_girls", "bio_boys", "bio_girls"]:
+        file_list = []
+        for file_type in ["jpg", "JPG"]:
+            file_list.extend(glob.glob(f"{static_path}/{directory}/*.{file_type}"))
+        for file in file_list:
+            await refresh_static_file(category=directory, file_type="photo", file_name=file, chat_id=message.from_user.id)
+        file_list = []
+        for file_type in ["mp4"]:
+            file_list.extend(glob.glob(f"{static_path}/{directory}/*.{file_type}"))
+        for file in file_list:
+            await refresh_static_file(category=directory, file_type="video", file_name=file, chat_id=message.from_user.id)
 
 
 @router.message(F.text == "Управлять контентом")

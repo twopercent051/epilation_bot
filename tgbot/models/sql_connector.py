@@ -91,6 +91,15 @@ class RegistrationsDB(Base):
     status = Column(String, nullable=False)  # created cancelled finished
 
 
+class StaticsDB(Base):
+    __tablename__ = "statics"
+
+    id = Column(Integer, nullable=False, autoincrement=True, primary_key=True)
+    category = Column(String, nullable=True)
+    title = Column(String, nullable=False)
+    file_id = Column(String, nullable=False)
+
+
 class BaseDAO:
     """Класс взаимодействия с БД"""
     model = None
@@ -177,4 +186,23 @@ class RegistrationsDAO(BaseDAO):
             phone = user["phone"]
             query_registrations = select(cls.model.__table__.columns).filter_by(phone=phone)
             result = await session.execute(query_registrations)
+            return result.mappings().all()
+
+
+class StaticsDAO(BaseDAO):
+    model = StaticsDB
+
+    @classmethod
+    async def delete_all(cls):
+        async with async_session_maker() as session:
+            stmt = delete(cls.model)
+            await session.execute(stmt)
+            await session.commit()
+
+    @classmethod
+    async def get_order_list(cls, category: str, like: str):
+        async with async_session_maker() as session:
+            query = select(cls.model.__table__.columns).filter_by(category=category).\
+                where(cls.model.title.like(f"%{like}%")).order_by(cls.model.title.asc())
+            result = await session.execute(query)
             return result.mappings().all()
