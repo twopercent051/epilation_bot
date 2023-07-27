@@ -22,7 +22,11 @@ class AdminFSM(StatesGroup):
 class UserFSM(StatesGroup):
     home = State()
     manual_phone = State()
-    full_name = State()
-    birthday = State()
+    full_name_reg = State()
+    birthday_reg = State()
 
     main_menu = State()
+
+    reg_time = State()
+    full_name_sign = State()
+    birthday_sign = State()

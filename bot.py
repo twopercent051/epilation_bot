@@ -2,13 +2,14 @@ import asyncio
 
 from tgbot.handlers.admin.admin import router as admin_router
 from tgbot.handlers.admin.content_management import router as content_router
+from tgbot.handlers.user.sign_up_block import router as sign_up_block
 from tgbot.handlers.user.registration_block import router as registration_block
 from tgbot.handlers.user.price_block import router as price_block
 from tgbot.handlers.user.about_epilation_block import router as about_epilation_block
 from tgbot.handlers.user.address_block import router as address_block
 from tgbot.handlers.user.about_me_block import router as about_me_block
 from tgbot.handlers.echo import router as echo_router
-from tgbot.misc.scheduler import scheduler_jobs
+# from tgbot.misc.scheduler import scheduler_jobs
 from tgbot.models.redis_connector import RedisConnector as rds
 
 from create_bot import bot, dp, scheduler, logger, register_global_middlewares, config
@@ -24,12 +25,13 @@ user_routers = [
     about_epilation_block,
     address_block,
     about_me_block,
+    sign_up_block,
 ]
 
 
 async def main():
     logger.info("Starting bot")
-    scheduler_jobs()
+    # scheduler_jobs()
     rds.redis_start()
     dp.include_routers(
         *admin_routers,

@@ -11,7 +11,17 @@ from tgbot.keyboards.inline import UserInlineKeyboard as inline_kb
 router = Router()
 
 
-async def price_render(user_id: int | str, gender: str):
+async def price_main(user_id: int | str):
+    finished_registrations = await RegistrationsDAO.get_by_user_id(user_id=user_id)
+    no_photo = await StaticsDAO.get_one_or_none(title="no_photo")
+    if len(finished_registrations) == 0:
+        new_clients_photo = await TextsDAO.get_one_or_none(chapter="new_clients|price_list")
+        new_clients_photo = new_clients_photo["text"] if new_clients_photo is not None else no_photo["file_id"]
+        await bot.send_photo(chat_id=user_id, photo=new_clients_photo)
+    await price_render(user_id=user_id, gender="girls")
+
+
+async def price_render(user_id: str, gender: str):
     no_photo = await StaticsDAO.get_one_or_none(title="no_photo")
     laser_photo = await TextsDAO.get_one_or_none(chapter=f"laser_{gender}|price_list")
     bio_photo = await TextsDAO.get_one_or_none(chapter=f"bio_{gender}|price_list")
@@ -27,13 +37,13 @@ async def price_render(user_id: int | str, gender: str):
 
 @router.message(F.text == "Прайс", UserFSM.main_menu)
 async def price_list(message: Message):
-    finished_registrations = await RegistrationsDAO.get_by_user_id(user_id=str(message.from_user.id))
-    no_photo = await StaticsDAO.get_one_or_none(title="no_photo")
-    if len(finished_registrations) == 0:
-        new_clients_photo = await TextsDAO.get_one_or_none(chapter="new_clients|price_list")
-        new_clients_photo = new_clients_photo["text"] if new_clients_photo is not None else no_photo["file_id"]
-        await message.answer_photo(photo=new_clients_photo)
-    await price_render(user_id=message.from_user.id, gender="girls")
+    await price_main(user_id=str(message.from_user.id))
+
+
+@router.callback_query(F.data == "price")
+async def price_list(callback: CallbackQuery):
+    await price_main(user_id=str(callback.from_user.id))
+    await bot.answer_callback_query(callback.id)
 
 
 @router.callback_query(F.data.split(":")[0] == "price_gender")

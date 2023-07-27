@@ -34,10 +34,10 @@ class UserMainMenu:
         await bot.send_message(chat_id=user_id, text=text, reply_markup=kb)
 
     @classmethod
-    async def menu_type(cls, user_id: str, name: str, phone: str, state: FSMContext):
+    async def menu_type(cls, user_id: str, state: FSMContext):
         user = await ClientsDAO.get_one_or_none(user_id=user_id)
+        name = user["full_name"] if user else ""
         if user:
-            # finished_registrations = await RegistrationsDAO.get_many(phone=phone, status="finished")
             finished_registrations = await RegistrationsDAO.get_many(user_id=user_id, status="finished")
             if len(finished_registrations) > 0:
                 await cls.current_clients_menu(user_id=user_id, name=name)
@@ -54,8 +54,6 @@ async def user_start(message: Message, command: CommandObject, state: FSMContext
     if user:
         await UserMainMenu.menu_type(
             user_id=str(message.from_user.id),
-            name=user["full_name"],
-            phone=user["phone"],
             state=state
         )
         return
@@ -65,9 +63,11 @@ async def user_start(message: Message, command: CommandObject, state: FSMContext
                "номер телефона и дату рождения.\nВсе данные собираются единожды! Бот запомнит вас  😍\nВ последующем " \
                "вы сможете записываться в несколько кликов 💚"
         kb = reply_kb.start_kb(is_office=True)
-    else:
+        await state.update_data(entry_point="office")
+    else:  # world
         text = "Приветики! Нажмите старт, что бы мы смогли начать  🤩"
         kb = reply_kb.start_kb(is_office=False)
+        await state.update_data(entry_point="world")
     await state.set_state(UserFSM.home)
     await message.answer(text, reply_markup=kb)
 
@@ -82,14 +82,16 @@ async def phone_record(message: Message, state: FSMContext):
     user = await ClientsDAO.get_one_or_none(phone=phone)
     name = user["full_name"] if user else ""
     username = f"@{message.from_user.username}" if message.from_user.username else ""
+    state_data = await state.get_data()
     await ClientsDAO.create(
         user_id=str(message.from_user.id),
         username=username,
         phone=phone,
         full_name=name,
-        gender="unknown"
+        gender="unknown",
+        entry_point=state_data["entry_point"]
     )
-    await UserMainMenu.menu_type(user_id=str(message.contact.user_id), name=name, phone=phone, state=state)
+    await UserMainMenu.menu_type(user_id=str(message.contact.user_id), state=state)
 
 
 ###############
@@ -115,7 +117,7 @@ async def phone_record(message: Message, state: FSMContext):
         else:
             text = "Напишите, пожалуйста, свою Фамилию и Имя.\nФормат: Иванова Светлана"
             kb = None
-            await state.set_state(UserFSM.full_name)
+            await state.set_state(UserFSM.full_name_reg)
             await state.update_data(phone=message.text)
     else:
         text = "К сожалению, не удалось введённое сообщение определить как номер телефона. Пожалуйста, напишите " \
@@ -147,7 +149,7 @@ async def correct_phone(callback: CallbackQuery, state: FSMContext):
     await bot.answer_callback_query(callback.id)
 
 
-@router.message(F.text, UserFSM.full_name)
+@router.message(F.text, UserFSM.full_name_reg)
 async def get_full_name(message: Message, state: FSMContext):
     text = "Выберите пол:"
     kb = inline_kb.user_gender_kb()
@@ -161,12 +163,12 @@ async def get_user_gender(callback: CallbackQuery, state: FSMContext):
            "01.01.1980"
     kb = inline_kb.user_birthday_kb()
     await state.update_data(gender=callback.data.split(":")[1])
-    await state.set_state(UserFSM.birthday)
+    await state.set_state(UserFSM.birthday_reg)
     await callback.message.answer(text, reply_markup=kb)
     await bot.answer_callback_query(callback.id)
 
 
-@router.message(F.text, UserFSM.birthday)
+@router.message(F.text, UserFSM.birthday_reg)
 async def get_user_birthday(message: Message, state: FSMContext):
     try:
         birthday = datetime.strptime(message.text, "%d.%m.%Y")
@@ -178,15 +180,15 @@ async def get_user_birthday(message: Message, state: FSMContext):
             username=username,
             phone=state_data["phone"],
             gender=state_data["gender"],
-            birthday=birthday
+            birthday=birthday,
+            entry_point=state_data["entry_point"]
         )
-        await UserMainMenu.menu_type(user_id=str(message.from_user.id), name=state_data["full_name"],
-                                     phone=state_data["phone"], state=state)
+        await UserMainMenu.menu_type(user_id=str(message.from_user.id), state=state)
     except ValueError:
         text = "К сожалению, не удалось введённое сообщение определить как дату рождения. Пожалуйста, напишите дату " \
                "рождения в формате: 07.02.1990"
         kb = inline_kb.user_birthday_kb()
-        await state.set_state(UserFSM.birthday)
+        await state.set_state(UserFSM.birthday_reg)
         await message.answer(text, reply_markup=kb)
 
 
@@ -194,20 +196,18 @@ async def get_user_birthday(message: Message, state: FSMContext):
 async def main_menu_clb(callback: CallbackQuery, state: FSMContext):
     username = f"@{callback.from_user.username}" if callback.from_user.username else ""
     state_data = await state.get_data()
+    birthday = datetime.strptime("01.01.1900", "%d.%m.%Y")
     await ClientsDAO.create(
         user_id=str(callback.from_user.id),
         full_name=state_data["full_name"],
         username=username,
         phone=state_data["phone"],
         gender=state_data["gender"],
+        birthday=birthday,
+        entry_point=state_data["entry_point"]
     )
     await UserMainMenu.menu_type(
         user_id=str(callback.from_user.id),
-        name=state_data["full_name"],
-        phone=state_data["phone"],
         state=state
     )
     await bot.answer_callback_query(callback.id)
-
-
-

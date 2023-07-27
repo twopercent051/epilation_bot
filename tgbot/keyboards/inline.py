@@ -1,4 +1,5 @@
-from typing import Literal
+from datetime import datetime
+from typing import Literal, List, Optional
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -340,5 +341,151 @@ class UserAboutEpilationInline:
             ],
             [InlineKeyboardButton(text="Ок. С биоэпиляцией понятно, хочу почитать про лазерную",
                                   callback_data="about_epil:laser:girls:1")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+class UserSignUpInline:
+
+    @classmethod
+    def msg_to_admin_kb(cls):
+        keyboard = [[InlineKeyboardButton(text="Написать Оксане в личку", url="https://t.me/neprostowaxing")]]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def create_reg_gender_kb(cls):
+        keyboard = [
+            [InlineKeyboardButton(text="Для девушки 👱‍♀️", callback_data="create_reg|gender:girls")],
+            [InlineKeyboardButton(text="Для мужчины 👱‍♂️", callback_data="create_reg|gender:boys")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def create_reg_category_kb(cls):
+        keyboard = [
+            [
+                InlineKeyboardButton(text="Лазерная", callback_data="create_reg|category:laser"),
+                InlineKeyboardButton(text="Био (воск или шугаринг)", callback_data="create_reg|category:bio"),
+            ],
+            [InlineKeyboardButton(text="Посмотреть сравнение видов эпиляции", callback_data="epil_diff")],
+            [InlineKeyboardButton(text="Посмотреть цены", callback_data="price")],
+            [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_block_c")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def menu_services_kb(cls, services: list, ok_services: list, gender: Literal["girls", "boys"]):
+        keyboard = []
+        for i in range((len(services) + 1) // 2):
+            if 2 * i + 1 >= len(services):
+                text = services[2 * i]["title"]
+                service_id = services[2 * i]["id"]
+                sign = "✅" if service_id in ok_services else ""
+                keyboard.append([InlineKeyboardButton(text=f"{text} {sign}", callback_data=f"switch_service:{service_id}")])
+            else:
+                text_1, text_2 = services[2 * i]["title"], services[2 * i + 1]["title"]
+                service_id_1, service_id_2 = services[2 * i]["id"], services[2 * i + 1]["id"]
+                sign_1 = "✅" if service_id_1 in ok_services else ""
+                sign_2 = "✅" if service_id_2 in ok_services else ""
+                keyboard.append(
+                    [
+                        InlineKeyboardButton(text=f"{text_1} {sign_1}", callback_data=f"switch_service:{service_id_1}"),
+                        InlineKeyboardButton(text=f"{text_2} {sign_2}", callback_data=f"switch_service:{service_id_2}"),
+                    ]
+                )
+        keyboard.append(
+            [
+                InlineKeyboardButton(text="⬅️ Назад", callback_data=f"create_reg|gender:{gender}"),
+                InlineKeyboardButton(text="Далее ➡️", callback_data="main_menu_c_accept"),
+            ]
+        )
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def create_reg_accept_kb(cls, category: Literal["bio", "laser"]):
+        keyboard = [
+            [
+                InlineKeyboardButton(text="⬅️ Назад", callback_data=f"create_reg|category:{category}"),
+                InlineKeyboardButton(text="Подтвердить 👍", callback_data="choose_date"),
+            ],
+            [InlineKeyboardButton(text="Связаться с Оксаной", url="https://t.me/neprostowaxing")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def choose_date_kb(cls, date_list: List[datetime], back_data: str, offset: Optional[int]):
+        date_row = []
+        for date in date_list[:5]:
+            date_row.append(InlineKeyboardButton(text=date.strftime("%d.%m"),
+                                                 callback_data=f"select_date:{date.strftime('%d.%m.%Y')}"))
+        second_row = [InlineKeyboardButton(text="⬅️ Назад", callback_data=back_data)]
+        if offset is not None:
+            second_row.append(InlineKeyboardButton(text="Ещё варианты 🔄", callback_data=f"date_offset:{offset}"))
+        keyboard = [
+            date_row,
+            second_row,
+            [InlineKeyboardButton(text="Связаться с Оксаной", url="https://t.me/neprostowaxing")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def choose_time_kb(cls, slots: list):
+        slots_text = {
+            "morning": "Утро (9:00-12:00)",
+            "day": "День (12:00-18:00)",
+            "evening": "Вечер (18:00-22:00)",
+        }
+        date_row = []
+        for slot in slots:
+            date_row.append(InlineKeyboardButton(text=slots_text[slot], callback_data=f"select_time:{slot}"))
+        keyboard = [
+            date_row,
+            [
+                InlineKeyboardButton(text="⬅️ Назад", callback_data="choose_date"),
+                InlineKeyboardButton(text="Связаться с Оксаной", url="https://t.me/neprostowaxing"),
+            ]
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def finish_reg_accept_kb(cls, date: datetime):
+        keyboard = [
+            [
+                InlineKeyboardButton(text="⬅️ Назад", callback_data=f"select_date:{date.strftime('%d.%m.%Y')}"),
+                InlineKeyboardButton(text="Подтвердить 👍", callback_data="finish_reg"),
+            ],
+            [InlineKeyboardButton(text="Связаться с Оксаной", url="https://t.me/neprostowaxing")],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def no_birthday_kb(cls):
+        keyboard = [[InlineKeyboardButton(text="Написать Оксане в личку", callback_data="no_birthday")]]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def resource_menu_kb(cls):
+        keyboard = [
+            [
+                InlineKeyboardButton(text="Яндекс", callback_data="resource:Яндекс"),
+                InlineKeyboardButton(text="VK", callback_data="resource:VK"),
+                InlineKeyboardButton(text="2ГИС", callback_data="resource:2ГИС"),
+            ],
+            [
+                InlineKeyboardButton(text="Instagram", callback_data="resource:Instagram"),
+                InlineKeyboardButton(text="Рекомендация", callback_data="resource:Рекомендация"),
+                InlineKeyboardButton(text="Другое", callback_data="resource:Другое"),
+            ],
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    @classmethod
+    def pay_advance_kb(cls, reg_id: int):
+        keyboard = [
+            [InlineKeyboardButton(text="Оплатить 500р.✅", callback_data=f"pay_advance:{reg_id}")]
+            [
+                InlineKeyboardButton(text="Отменить запись ❌", callback_data=f"cancel_reg:{reg_id}"),
+                InlineKeyboardButton(text="Связаться с Оксаной", url="https://t.me/neprostowaxing"),
+            ],
         ]
         return InlineKeyboardMarkup(inline_keyboard=keyboard)

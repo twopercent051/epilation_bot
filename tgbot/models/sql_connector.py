@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import MetaData, DateTime, Column, Integer, String, TEXT, DATE, TIME, JSON, BOOLEAN, TIMESTAMP, select, \
     insert, delete, update, inspect
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -87,8 +89,10 @@ class RegistrationsDB(Base):
     reg_time_finish = Column(TIME, nullable=False)
     services = Column(JSON, nullable=True)
     total_price = Column(Integer, nullable=True)
-    is_blocked = Column(BOOLEAN, nullable=False)
-    status = Column(String, nullable=False)  # created cancelled finished
+    status = Column(String, nullable=False, default="created")  # created cancelled finished moved blocked confirmation_sent approved
+    resource = Column(String, nullable=True)
+    entry_point = Column(String, nullable=False)  # world office
+    advance = Column(String, nullable=False, default="not_required")  # not_required processing finished
 
 
 class StaticsDB(Base):
@@ -167,6 +171,13 @@ class ServicesDAO(BaseDAO):
 class ClientsDAO(BaseDAO):
     model = ClientsDB
 
+    @classmethod
+    async def update(cls, user_id: str, **data):
+        async with async_session_maker() as session:
+            stmt = update(cls.model).values(**data).filter_by(user_id=user_id)
+            await session.execute(stmt)
+            await session.commit()
+
 
 class MailingsDAO(BaseDAO):
     model = MailingsDB
@@ -176,7 +187,22 @@ class RegistrationsDAO(BaseDAO):
     model = RegistrationsDB
 
     @classmethod
-    async def get_by_user_id(cls, user_id: str) -> dict:
+    async def update(cls, reg_id: int, **data):
+        async with async_session_maker() as session:
+            stmt = update(cls.model).values(**data).filter_by(id=reg_id)
+            await session.execute(stmt)
+            await session.commit()
+
+    @classmethod
+    async def get_many_created(cls, reg_date: datetime) -> list:
+        async with async_session_maker() as session:
+            query = select(cls.model.__table__.columns).filter_by(reg_date=reg_date).\
+                filter(cls.model.status.in_(["created", "blocked", "confirmation_sent", "approved"]))
+            result = await session.execute(query)
+            return result.mappings().all()
+
+    @classmethod
+    async def get_by_user_id(cls, user_id: str, finished=None, created=None) -> dict:
         async with async_session_maker() as session:
             query_clients = select(ClientsDB.__table__.columns).filter_by(user_id=user_id).limit(1)
             result = await session.execute(query_clients)
@@ -185,8 +211,28 @@ class RegistrationsDAO(BaseDAO):
                 return list()
             phone = user["phone"]
             query_registrations = select(cls.model.__table__.columns).filter_by(phone=phone)
+            if finished:
+                query_registrations.filter_by(status="finished")
+            if created:
+                query_registrations.filter(cls.model.status.in_(["created", "blocked"]))
             result = await session.execute(query_registrations)
             return result.mappings().all()
+
+    @classmethod
+    async def get_last_4_ordering(cls, user_id: str):
+        async with async_session_maker() as session:
+            query = select(cls.model.__table__.columns).filter_by(user_id=user_id).\
+                order_by(cls.model.reg_date.asc(), cls.model.reg_time_start.asc()).limit(4)
+            result = await session.execute(query)
+            return result.mappings().all()
+
+    # @classmethod
+    # async def get_order_list(cls, **filter_by) -> list:
+    #     async with async_session_maker() as session:
+    #         query = select(cls.model.__table__.columns).filter_by(**filter_by).\
+    #             order_by(cls.model.__table__.ordering.asc())
+    #         result = await session.execute(query)
+    #         return result.mappings().all()
 
 
 class StaticsDAO(BaseDAO):
